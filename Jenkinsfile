@@ -2,57 +2,38 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'eu-west-2'
-        ECR_REGISTRY = '430195503517.dkr.ecr.eu-west-2.amazonaws.com'
+        AWS_REGION = 'eu-west-2'  // Change to your AWS region
+        ECR_REPO = '430195503517.dkr.ecr.eu-west-2.amazonaws.com/product-service'  // Update with your ECR repository URI
+        AWS_CLI = '/usr/local/bin/aws'  // Path to AWS CLI
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git credentialsId: 'your-git-credentials-id', url: 'https://github.com/your-username/shopping-microservices.git'
+                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'  // Update with your GitHub repo URL
             }
         }
 
-        stage('Login to AWS ECR') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY'
+                    sh 'docker build -t ${ECR_REPO}:latest .'  // Build Docker image
                 }
             }
         }
 
-        stage('Build and Push Auth Service') {
+        stage('Login to ECR') {
             steps {
-                dir('auth-service') {
-                    sh """
-                        docker build -t auth-service .
-                        docker tag auth-service:latest $ECR_REGISTRY/auth-service:latest
-                        docker push $ECR_REGISTRY/auth-service:latest
-                    """
+                script {
+                    sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}'  // Log in to ECR
                 }
             }
         }
 
-        stage('Build and Push Cart Service') {
+        stage('Push to ECR') {
             steps {
-                dir('cart-service') {
-                    sh """
-                        docker build -t cart-service .
-                        docker tag cart-service:latest $ECR_REGISTRY/cart-service:latest
-                        docker push $ECR_REGISTRY/cart-service:latest
-                    """
-                }
-            }
-        }
-
-        stage('Build and Push Product Service') {
-            steps {
-                dir('product-service') {
-                    sh """
-                        docker build -t product-service .
-                        docker tag product-service:latest $ECR_REGISTRY/product-service:latest
-                        docker push $ECR_REGISTRY/product-service:latest
-                    """
+                script {
+                    sh 'docker push ${ECR_REPO}:latest'  // Push Docker image to ECR
                 }
             }
         }
