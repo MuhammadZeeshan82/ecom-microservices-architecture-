@@ -2,10 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-2'
-        ECR_REGISTRY = '430195503517.dkr.ecr.us-west-2.amazonaws.com'
-        ECR_REPOSITORY = 'ecom-microservices-architecture' // ✅ updated (removed trailing dash)
-        IMAGE_TAG = 'latest'
+        IMAGE_TAG = "latest"
     }
 
     stages {
@@ -15,54 +12,45 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Images') {
             steps {
                 script {
-                    sh "docker build -t $ECR_REPOSITORY:$IMAGE_TAG ."
+                    def services = ['auth-service', 'cart-service', 'product-service']
+                    for (svc in services) {
+                        sh "docker build -t ${svc}:${IMAGE_TAG} -f ${svc}/Dockerfile ${svc}"
+                    }
                 }
             }
         }
 
         stage('Login to AWS ECR') {
             steps {
-                script {
-                    withCredentials([[
-                        $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-jenkins-creds'
-                    ]]) {
-                        sh """
-                            aws ecr get-login-password --region $AWS_REGION | \
-                            docker login --username AWS --password-stdin $ECR_REGISTRY
-                        """
-                    }
-                }
+                // Your ECR login command
             }
         }
 
-        stage('Push Docker Image to ECR') {
+        stage('Push Docker Images to ECR') {
             steps {
                 script {
-                    sh """
-                        docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-                        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-                    """
+                    def services = ['auth-service', 'cart-service', 'product-service']
+                    for (svc in services) {
+                        sh "docker tag ${svc}:${IMAGE_TAG} <your-account-id>.dkr.ecr.<region>.amazonaws.com/${svc}:${IMAGE_TAG}"
+                        sh "docker push <your-account-id>.dkr.ecr.<region>.amazonaws.com/${svc}:${IMAGE_TAG}"
+                    }
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
+                echo "Deployment logic goes here"
             }
         }
     }
 
     post {
         failure {
-            echo "❌ Pipeline failed."
-        }
-        success {
-            echo "✅ Pipeline succeeded."
+            echo '❌ Pipeline failed.'
         }
     }
 }
