@@ -9,41 +9,38 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo "Cloning repository..."
-                git branch: 'main',
-                    url: 'https://github.com/ecom-microservices-architecture/product-service.git'
-                // If private repo, add credentialsId: 'your-credential-id'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/MuhammadZeeshan82/ecom-microservices-architecture-',
+                        credentialsId: 'github-creds' // remove this line if repo is public
+                    ]]
+                ])
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                sh 'docker build -t ${ECR_REPO}:latest .'
+                script {
+                    sh 'docker build -t ${ECR_REPO}:latest .'
+                }
             }
         }
 
         stage('Login to Amazon ECR') {
             steps {
-                echo "Logging in to Amazon ECR..."
-                sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}'
+                script {
+                    sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}'
+                }
             }
         }
 
         stage('Push Docker Image to ECR') {
             steps {
-                echo "Pushing Docker image to ECR..."
-                sh 'docker push ${ECR_REPO}:latest'
+                script {
+                    sh 'docker push ${ECR_REPO}:latest'
+                }
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Pipeline completed successfully."
-        }
-        failure {
-            echo "Pipeline failed. Check logs for errors."
         }
     }
 }
