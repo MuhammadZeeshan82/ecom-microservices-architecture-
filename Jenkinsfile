@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-2'  // Update if your AWS region is different
+        AWS_REGION = 'us-west-2'
         ECR_REGISTRY = '430195503517.dkr.ecr.us-west-2.amazonaws.com'
-        ECR_REPOSITORY = 'ecom-microservices-architecture-'
+        ECR_REPOSITORY = 'ecom-microservices-architecture' // ✅ updated (removed trailing dash)
         IMAGE_TAG = 'latest'
     }
 
@@ -53,7 +53,6 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                // Optional: Add ECS deployment logic or other deployment steps here
             }
         }
     }
