@@ -2,40 +2,48 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'eu-west-2'  // Change to your AWS region
-        ECR_REPO = '430195503517.dkr.ecr.eu-west-2.amazonaws.com/product-service'  // Update with your ECR repository URI
-        AWS_CLI = '/usr/local/bin/aws'  // Path to AWS CLI
+        AWS_REGION = 'eu-west-2'
+        ECR_REPO = '430195503517.dkr.ecr.eu-west-2.amazonaws.com/product-service'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/your-repo.git'  // Update with your GitHub repo URL
+                echo "Cloning repository..."
+                git branch: 'main',
+                    url: 'https://github.com/ecom-microservices-architecture/product-service.git'
+                // If private repo, add credentialsId: 'your-credential-id'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t ${ECR_REPO}:latest .'  // Build Docker image
-                }
+                echo "Building Docker image..."
+                sh 'docker build -t ${ECR_REPO}:latest .'
             }
         }
 
-        stage('Login to ECR') {
+        stage('Login to Amazon ECR') {
             steps {
-                script {
-                    sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}'  // Log in to ECR
-                }
+                echo "Logging in to Amazon ECR..."
+                sh 'aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}'
             }
         }
 
-        stage('Push to ECR') {
+        stage('Push Docker Image to ECR') {
             steps {
-                script {
-                    sh 'docker push ${ECR_REPO}:latest'  // Push Docker image to ECR
-                }
+                echo "Pushing Docker image to ECR..."
+                sh 'docker push ${ECR_REPO}:latest'
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully."
+        }
+        failure {
+            echo "Pipeline failed. Check logs for errors."
         }
     }
 }
