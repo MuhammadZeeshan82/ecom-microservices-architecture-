@@ -2,20 +2,19 @@ pipeline {
     agent any
 
     environment {
-        // Optionally, you can set environment variables for AWS region, etc.
-        AWS_REGION = 'us-west-2'
+        AWS_REGION = 'us-west-2'  // Set your AWS region
     }
 
     stages {
         stage('Login to AWS ECR') {
             steps {
                 script {
-                    // Use 'withCredentials' to fetch AWS credentials
-                    withCredentials([aws(credentialsId: 'your-aws-credentials-id')]) {
-                        // Execute AWS CLI commands using the credentials
+                    // Use the correct credentials ID
+                    withCredentials([aws(credentialsId: 'aws-jenkins-creds')]) {
+                        // AWS CLI commands
                         sh 'aws sts get-caller-identity'
-                        
-                        // Example: Logging into ECR using the AWS credentials
+
+                        // Login to AWS ECR
                         sh '''
                             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 430195503517.dkr.ecr.$AWS_REGION.amazonaws.com
                         '''
@@ -27,7 +26,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Deploying to AWS"
-                // Other deployment steps...
+                // Add your deployment steps here
             }
         }
     }
