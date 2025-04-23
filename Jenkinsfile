@@ -2,32 +2,68 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-2'  // Set your AWS region
+        AWS_REGION = 'us-west-2'  // <-- Update this to your AWS region if needed
+        ECR_REGISTRY = '430195503517.dkr.ecr.us-west-2.amazonaws.com'  // <-- Update this to your ECR URI
+        ECR_REPOSITORY = 'your-repo-name'  // <-- Update this to your ECR repo name
+        IMAGE_TAG = 'latest'
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t $ECR_REPOSITORY:$IMAGE_TAG ."
+                }
+            }
+        }
+
         stage('Login to AWS ECR') {
             steps {
                 script {
-                    // Use the correct credentials ID
-                    withCredentials([aws(credentialsId: 'aws-jenkins-creds')]) {
-                        // AWS CLI commands
-                        sh 'aws sts get-caller-identity'
-
-                        // Login to AWS ECR
-                        sh '''
-                            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 430195503517.dkr.ecr.$AWS_REGION.amazonaws.com
-                        '''
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-jenkins-creds'
+                    ]]) {
+                        sh """
+                            aws ecr get-login-password --region $AWS_REGION | \
+                            docker login --username AWS --password-stdin $ECR_REGISTRY
+                        """
                     }
+                }
+            }
+        }
+
+        stage('Push Docker Image to ECR') {
+            steps {
+                script {
+                    sh """
+                        docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+                        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+                    """
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploying to AWS"
-                // Add your deployment steps here
+                echo 'Deploying to ECS or target environment...'
+                // You can add ECS/Fargate update service steps here if needed
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Pipeline failed."
+        }
+        success {
+            echo "Pipeline succeeded."
         }
     }
 }
