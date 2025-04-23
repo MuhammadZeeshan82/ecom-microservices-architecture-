@@ -26,8 +26,12 @@ pipeline {
         stage('Login to AWS ECR') {
             steps {
                 echo 'Logging in to AWS ECR...'
-                // Example:
-                // sh 'aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.<region>.amazonaws.com'
+                withCredentials([string(credentialsId: 'aws-cred', variable: 'AWS_ACCESS_KEY_ID'),
+                                 string(credentialsId: 'aws-cred', variable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.<region>.amazonaws.com
+                    '''
+                }
             }
         }
 
