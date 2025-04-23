@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-2'  // <-- Update this to your AWS region if needed
-        ECR_REGISTRY = '430195503517.dkr.ecr.us-west-2.amazonaws.com'  // <-- Update this to your ECR URI
-        ECR_REPOSITORY = 'your-repo-name'  // <-- Update this to your ECR repo name
+        AWS_REGION = 'us-west-2'  // Update if your AWS region is different
+        ECR_REGISTRY = '430195503517.dkr.ecr.us-west-2.amazonaws.com'
+        ECR_REPOSITORY = 'ecom-microservices-architecture-'
         IMAGE_TAG = 'latest'
     }
 
@@ -52,18 +52,18 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploying to ECS or target environment...'
-                // You can add ECS/Fargate update service steps here if needed
+                echo 'Deploying application...'
+                // Optional: Add ECS deployment logic or other deployment steps here
             }
         }
     }
 
     post {
         failure {
-            echo "Pipeline failed."
+            echo "❌ Pipeline failed."
         }
         success {
-            echo "Pipeline succeeded."
+            echo "✅ Pipeline succeeded."
         }
     }
 }
